@@ -78,5 +78,11 @@ server.post("/participants", (req, res) => {
 
 });
 
+server.get("/participants", (req, res) => {
+    db.collection("participants").find().toArray().then((allUsers) => {
+        return res.send(allUsers);
+    });
+});
+
 server.listen(apiPort, () => console.log(`API running at port ${apiPort}`));
 
