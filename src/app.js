@@ -146,5 +146,48 @@ server.get("/messages", async (req, res) => {
     }
 });
 
+server.post("/status", async (req, res) => {
+    const user = req.headers.user;
+    // console.log(user)
+
+    if (!user) {
+        return res.status(404).send("Esse user não existe");
+    }
+
+    const allUsers = await db.collection("participants").find().toArray();
+    // console.log(allUsers);
+    const userExists = allUsers.find(au => au.name === user);
+    // console.log("userExists",userExists);
+    if (!userExists) {
+        return res.sendStatus(404);
+    }
+
+    const userEnterDate = new Date(Date.now());
+
+    const hours = userEnterDate.getHours();
+    const minutes = userEnterDate.getMinutes();
+    const seconds = userEnterDate.getSeconds();
+
+    const timeString = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+    // console.log(timeString);
+
+    db.collection("participants").updateOne(
+        { _id: userExists._id },
+        { $set: { lastStatus: timeString } },
+        (err, result) => {
+            if (err) {
+                return res.status(500).send('Erro interno do servidor');
+            }
+            else {
+                res.sendStatus(200);
+            }
+        });
+
+    res.send(userExists);
+});
+
 server.listen(apiPort, () => console.log(`API running at port ${apiPort}`));
 
