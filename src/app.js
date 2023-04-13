@@ -94,7 +94,32 @@ server.get("/participants", (req, res) => {
 });
 
 server.post("/messages", (req, res) => {
+    const { to, text, type } = req.body;
+    const from = req.headers.from;
 
+    const userEnterDate = new Date(Date.now());
+    const hours = userEnterDate.getHours();
+    const minutes = userEnterDate.getMinutes();
+    const seconds = userEnterDate.getSeconds();
+    const timeString = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+    const sendableObjectMessage = {
+        to,
+        text,
+        type,
+        from,
+        time: timeString
+    };
+
+    console.log(sendableObjectMessage);
+    const { error, value } = validateMessage(sendableObjectMessage);
+
+    console.log(value);    
+    db.collection("messages").insertOne({ value })
+        .then(() => res.sendStatus(201))
+        .catch((err) => console.log(err));
 });
 
 server.listen(apiPort, () => console.log(`API running at port ${apiPort}`));
