@@ -113,13 +113,37 @@ server.post("/messages", (req, res) => {
         time: timeString
     };
 
-    console.log(sendableObjectMessage);
     const { error, value } = validateMessage(sendableObjectMessage);
+    if (error) {
+        return res.status(422).send("Erro");
+    }
 
-    console.log(value);    
-    db.collection("messages").insertOne({ value })
+    db.collection("messages").insertOne(sendableObjectMessage)
         .then(() => res.sendStatus(201))
         .catch((err) => console.log(err));
+});
+
+server.get("/messages", async (req, res) => {
+    const user = req.headers.user;
+    const limit = req.query.limit;
+    // console.log(user);
+    try {
+        const allMessages = await db.collection("messages").find().toArray();
+        // console.log(allMessages);
+        let allowedMessages = allMessages.filter(am => (am.to === user) || (am.from === user) || (am.to === "Todos"));
+        // console.log("allowed:   ",allowedMessages);
+        if (!(limit > 0) && !(typeof limit === "number") && (limit !== undefined)) {
+            return res.status(422).send("limite invalido");
+        }
+        else if (limit) {
+            allowedMessages = allowedMessages.slice(-limit);
+        }
+        res.send(allowedMessages);
+    }
+    catch (erro) {
+        console.error(erro);
+        res.status(500).send("Erro interno do servidor");
+    }
 });
 
 server.listen(apiPort, () => console.log(`API running at port ${apiPort}`));
