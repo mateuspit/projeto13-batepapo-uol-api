@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import apiPort from "../constants/apiPort.js";
 // const { validateUser } = require("./../schemas/userSchema.js");
 import Joi from "joi"
@@ -189,8 +189,60 @@ server.post("/status", async (req, res) => {
     res.send(userExists);
 });
 
-setInterval(removeIdleUser, 15000);
-// setInterval(removeIdleUser, 5000);
+server.delete("/messages/:ID_DA_MENSAGEM", async (req, res) => {
+    // try {
+    const user = req.headers.user;
+    const messageId = req.params.ID_DA_MENSAGEM;
+    console.log(user);
+    console.log(messageId);
+
+    const userSendMessageIsTheSame = await db.collection("messages").findOne({ _id: new ObjectId(messageId) });
+    // console.log(userSendMessageIsTheSame.from);
+    if (!userSendMessageIsTheSame) return res.sendStatus(404);
+    if (userSendMessageIsTheSame.from === user) {
+        const result = await db.collection("messages").deleteOne({ _id: new ObjectId(messageId) });
+        if (!result.deletedCount) return res.sendStatus(404);
+        res.status(200).send("Menssagem deletado com sucesso")
+    }
+    else {
+        res.sendStatus(401);
+    }
+    // }
+    // catch (err) {
+    //     res.status(500).send("catch parceiro");
+    // }
+});
+
+server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
+    const { to, text, type } = req.body;
+    const from = req.headers.user;
+
+    const userEnterDate = new Date(Date.now());
+    const hours = userEnterDate.getHours();
+    const minutes = userEnterDate.getMinutes();
+    const seconds = userEnterDate.getSeconds();
+    const timeString = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+    const sendableObjectMessage = {
+        to,
+        text,
+        type,
+        from,
+        time: timeString
+    };
+
+    const { error, value } = validateMessage(sendableObjectMessage);
+    if(error) return console.log(error);
+
+    console.log(value);
+
+    res.send("teste amigo")
+});
+
+// setInterval(removeIdleUser, 15000);
+setInterval(removeIdleUser, 150000);
 
 async function removeIdleUser() {
     try {
@@ -198,12 +250,12 @@ async function removeIdleUser() {
         // console.log(allUsers);
 
         const newDataTimeStamp = new Date(Date.now());
-            const hours = newDataTimeStamp.getHours();
-            const minutes = newDataTimeStamp.getMinutes();
-            const seconds = newDataTimeStamp.getSeconds();
-            const newData = `${hours.toString().padStart(2, "0")}:${minutes
-                .toString()
-                .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+        const hours = newDataTimeStamp.getHours();
+        const minutes = newDataTimeStamp.getMinutes();
+        const seconds = newDataTimeStamp.getSeconds();
+        const newData = `${hours.toString().padStart(2, "0")}:${minutes
+            .toString()
+            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
         const refreshedUsers = allUsers.filter((au) => {
             const oldDataSeconds = Number(au.lastStatus.split(":")[2]);
@@ -266,7 +318,6 @@ async function removeIdleUser() {
         console.log({ message: err.message });
     }
 }
-// removeIdleUser(); 
 
 server.listen(apiPort, () => console.log(`API running at port ${apiPort}`));
 
