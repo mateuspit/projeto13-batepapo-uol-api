@@ -189,5 +189,84 @@ server.post("/status", async (req, res) => {
     res.send(userExists);
 });
 
+setInterval(removeIdleUser, 15000);
+// setInterval(removeIdleUser, 5000);
+
+async function removeIdleUser() {
+    try {
+        const allUsers = await db.collection("participants").find().toArray();
+        // console.log(allUsers);
+
+        const newDataTimeStamp = new Date(Date.now());
+            const hours = newDataTimeStamp.getHours();
+            const minutes = newDataTimeStamp.getMinutes();
+            const seconds = newDataTimeStamp.getSeconds();
+            const newData = `${hours.toString().padStart(2, "0")}:${minutes
+                .toString()
+                .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+        const refreshedUsers = allUsers.filter((au) => {
+            const oldDataSeconds = Number(au.lastStatus.split(":")[2]);
+
+            // const newDataTimeStamp = new Date(Date.now());
+            // const hours = newDataTimeStamp.getHours();
+            // const minutes = newDataTimeStamp.getMinutes();
+            // const seconds = newDataTimeStamp.getSeconds();
+            // const newData = `${hours.toString().padStart(2, "0")}:${minutes
+            //     .toString()
+            //     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+            const newDataSeconds = Number(newData.split(":")[2])
+
+
+            let conditionNewIsHigher = newDataSeconds > oldDataSeconds;
+            let conditionDiffIsMoreThanTen = (newDataSeconds - oldDataSeconds) > 10;
+            let conditionSame = newDataSeconds === oldDataSeconds;
+            if ((conditionNewIsHigher && conditionDiffIsMoreThanTen) || conditionSame) {
+                return false;
+            }
+
+            let conditionNewIsLower = newDataSeconds < oldDataSeconds;
+            conditionDiffIsMoreThanTen = ((newDataSeconds + 60) - oldDataSeconds) > 10;
+            conditionSame = newDataSeconds === oldDataSeconds;
+            if ((conditionNewIsLower && conditionDiffIsMoreThanTen) || conditionSame) {
+                return false;
+            }
+            console.log(newData);
+
+            return true;
+        });
+
+        console.log(refreshedUsers);
+        const deleteResult = await db.collection("participants").deleteMany({});
+        if (!deleteResult.deletedCount) return console.log("Nada deletado, nao tinha nada");
+        console.log("participantes foram deletados");
+
+        await db.collection("participants").insertMany(refreshedUsers);
+        console.log("participants atualizados");
+
+        const goodByeUsers = allUsers.filter(au => !refreshedUsers.some(ru => ru.name === au.name));
+        // console.log(goodByeMessage);
+
+        const goodByeMessages = goodByeUsers.map(gbu => {
+            return {
+                from: gbu.name,
+                to: "Todos",
+                text: "sai da sala...",
+                type: "status",
+                time: newData
+            };
+        });
+
+        await db.collection("messages").insertMany(goodByeMessages);
+        console.log("Messagens de partidas att");
+    }
+
+    catch (err) {
+        console.log({ message: err.message });
+    }
+}
+// removeIdleUser(); 
+
 server.listen(apiPort, () => console.log(`API running at port ${apiPort}`));
 
