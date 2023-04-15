@@ -87,10 +87,9 @@ server.post("/participants", async (req, res) => {
 });
 
 
-server.get("/participants", (req, res) => {
-    db.collection("participants").find().toArray().then((allUsers) => {
-        return res.send(allUsers);
-    });
+server.get("/participants", async (req, res) => {
+    const allUsers = await db.collection("participants").find().toArray();
+    return res.send(allUsers);
 });
 
 server.post("/messages", (req, res) => {
@@ -245,7 +244,7 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     // console.log(from);
     if (messageExist.from === from) {
         const result = await db.collection("messages")
-            .updateOne({ _id: new ObjectId(messageId) }, {$set: value});
+            .updateOne({ _id: new ObjectId(messageId) }, { $set: value });
         // console.log(result.matchedCount);
         // console.log(!!result.matchedCount);
         // if (!result.matchedCount) return res.status(404).send("nada mudou");
