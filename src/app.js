@@ -74,7 +74,7 @@ server.post("/participants", async (req, res) => {
             to: "Todos",
             text: "entra na sala...",
             type: "status",
-            time: timeString,
+            time: userEnterDate,
         });
 
         res.status(201).send("Usuario criado");
