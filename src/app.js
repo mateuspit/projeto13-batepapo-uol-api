@@ -66,7 +66,7 @@ server.post("/participants", async (req, res) => {
 
         db.collection("participants").insertOne({
             name: value.name,
-            lastStatus: timeString,
+            lastStatus: Date.now(),
         });
 
         db.collection("messages").insertOne({
@@ -74,7 +74,7 @@ server.post("/participants", async (req, res) => {
             to: "Todos",
             text: "entra na sala...",
             type: "status",
-            time: userEnterDate,
+            time: timeString,
         });
 
         res.status(201).send("Usuario criado");
