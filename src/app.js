@@ -248,7 +248,7 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     };
 
     const { error, value } = validateMessage(sendableObjectMessage);
-    if (error) return console.log(error);
+    if (error) return res.status(422).send("Erro no body");
 
     const messageExist = await db.collection("messages").findOne({ _id: new ObjectId(messageId) });
     // console.log(messageExist);
@@ -274,8 +274,8 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     // res.send("teste amigo")
 });
 
-setInterval(removeIdleUser, 150000);
-// setInterval(removeIdleUser, 15000);
+// setInterval(removeIdleUser, 1500000);
+setInterval(removeIdleUser, 15000);
 
 async function removeIdleUser() {
     // try {
