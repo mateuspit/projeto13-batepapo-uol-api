@@ -164,7 +164,7 @@ server.post("/status", async (req, res) => {
     // console.log(user)
 
     if (!user) {
-        return res.status(404).send("Esse user não existe");
+        return res.status(404).send("Header não foi passado");
     }
 
     const allUsers = await db.collection("participants").find().toArray();
@@ -172,7 +172,7 @@ server.post("/status", async (req, res) => {
     const userExists = allUsers.find(au => au.name === user);
     // console.log("userExists",userExists);
     if (!userExists) {
-        return res.sendStatus(404);
+        return res.status(404).send("Participante não está na lista");
     }
 
     const userEnterDate = new Date(Date.now());
