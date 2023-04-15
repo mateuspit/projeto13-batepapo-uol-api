@@ -32,7 +32,7 @@ const db = mongoClient.db();
 // }
 
 mongoClient.connect().then(() => {
-
+    console.log("MongoDB running")
     // db.collection("contatos").find().toArray()
     //     .then(contatos => {
     //         console.log(contatos)
@@ -77,7 +77,7 @@ server.post("/participants", async (req, res) => {
             time: timeString,
         });
 
-        res.status(201).send("Deu bom");
+        res.status(201).send("Usuario criado");
 
     }
     catch (error) {
@@ -216,6 +216,7 @@ server.delete("/messages/:ID_DA_MENSAGEM", async (req, res) => {
 server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     const { to, text, type } = req.body;
     const from = req.headers.user;
+    const messageId = req.params.ID_DA_MENSAGEM;
 
     const userEnterDate = new Date(Date.now());
     const hours = userEnterDate.getHours();
@@ -234,15 +235,34 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     };
 
     const { error, value } = validateMessage(sendableObjectMessage);
-    if(error) return console.log(error);
+    if (error) return console.log(error);
 
-    console.log(value);
+    const messageExist = await db.collection("messages").findOne({ _id: new ObjectId(messageId) });
+    // console.log(messageExist);
+    if (!messageExist) return res.sendStatus(404)
+    // console.log(messageExist);
+    // console.log(messageExist.from);
+    // console.log(from);
+    if (messageExist.from === from) {
+        const result = await db.collection("messages")
+            .updateOne({ _id: new ObjectId(messageId) }, {$set: value});
+        // console.log(result.matchedCount);
+        // console.log(!!result.matchedCount);
+        // if (!result.matchedCount) return res.status(404).send("nada mudou");
+        res.status(200).send("Menssagem update com sucesso")
+    }
+    else {
+        return res.status(401).send("User sem permissao");
+    }
 
-    res.send("teste amigo")
+
+    // console.log(value);
+
+    // res.send("teste amigo")
 });
 
 // setInterval(removeIdleUser, 15000);
-setInterval(removeIdleUser, 150000);
+setInterval(removeIdleUser, 15000);
 
 async function removeIdleUser() {
     try {
