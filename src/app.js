@@ -119,7 +119,7 @@ server.post("/messages", async (req, res) => {
 
     const participantsOnline = await db.collection("participants").find().toArray();
     // console.log("participantsOnline: ",participantsOnline);
-    if(!participantsOnline){
+    if (!participantsOnline) {
         return res.status(422).send("Não encontramos ninguem online :(")
     }
 
@@ -127,7 +127,7 @@ server.post("/messages", async (req, res) => {
     // console.log("participantsOnline: ",participantsOnline);
     // console.log("userExists: ",userExists);
     // console.log("from: ",from);
-    if(!userExists){
+    if (!userExists) {
         return res.status(422).send("Usuario não encontrado");
     }
 
@@ -278,78 +278,93 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
 setInterval(removeIdleUser, 15000);
 
 async function removeIdleUser() {
-    try {
-        const allUsers = await db.collection("participants").find().toArray();
-        // console.log(allUsers);
+    // try {
+    const allUsers = await db.collection("participants").find().toArray();
+    // console.log(allUsers);
+    // console.log(!allUsers);
+    // console.log(!!allUsers);
+    if (allUsers.length === 0) return console.log("Nada deletado, nao tinha ninguem");
+    // if (allUsers) return console.log("Nada deletado, nao tinha ninguem");
+    // console.log(allUsers);
 
-        const newDataTimeStamp = new Date(Date.now());
-        const hours = newDataTimeStamp.getHours();
-        const minutes = newDataTimeStamp.getMinutes();
-        const seconds = newDataTimeStamp.getSeconds();
-        const newData = `${hours.toString().padStart(2, "0")}:${minutes
-            .toString()
-            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    const newDataTimeStamp = new Date(Date.now());
+    const hours = newDataTimeStamp.getHours();
+    const minutes = newDataTimeStamp.getMinutes();
+    const seconds = newDataTimeStamp.getSeconds();
+    const newData = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-        const refreshedUsers = allUsers.filter((au) => {
-            const oldDataSeconds = Number(au.lastStatus.split(":")[2]);
+    const refreshedUsers = allUsers.filter((au) => {
+        const oldDataSeconds = Number(au.lastStatus.split(":")[2]);
 
-            // const newDataTimeStamp = new Date(Date.now());
-            // const hours = newDataTimeStamp.getHours();
-            // const minutes = newDataTimeStamp.getMinutes();
-            // const seconds = newDataTimeStamp.getSeconds();
-            // const newData = `${hours.toString().padStart(2, "0")}:${minutes
-            //     .toString()
-            //     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+        // const newDataTimeStamp = new Date(Date.now());
+        // const hours = newDataTimeStamp.getHours();
+        // const minutes = newDataTimeStamp.getMinutes();
+        // const seconds = newDataTimeStamp.getSeconds();
+        // const newData = `${hours.toString().padStart(2, "0")}:${minutes
+        //     .toString()
+        //     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-            const newDataSeconds = Number(newData.split(":")[2])
+        const newDataSeconds = Number(newData.split(":")[2])
 
 
-            let conditionNewIsHigher = newDataSeconds > oldDataSeconds;
-            let conditionDiffIsMoreThanTen = (newDataSeconds - oldDataSeconds) > 10;
-            let conditionSame = newDataSeconds === oldDataSeconds;
-            if ((conditionNewIsHigher && conditionDiffIsMoreThanTen) || conditionSame) {
-                return false;
-            }
+        let conditionNewIsHigher = newDataSeconds > oldDataSeconds;
+        let conditionDiffIsMoreThanTen = (newDataSeconds - oldDataSeconds) > 10;
+        let conditionSame = newDataSeconds === oldDataSeconds;
+        if ((conditionNewIsHigher && conditionDiffIsMoreThanTen) || conditionSame) {
+            return false;
+        }
 
-            let conditionNewIsLower = newDataSeconds < oldDataSeconds;
-            conditionDiffIsMoreThanTen = ((newDataSeconds + 60) - oldDataSeconds) > 10;
-            conditionSame = newDataSeconds === oldDataSeconds;
-            if ((conditionNewIsLower && conditionDiffIsMoreThanTen) || conditionSame) {
-                return false;
-            }
-            console.log(newData);
+        let conditionNewIsLower = newDataSeconds < oldDataSeconds;
+        conditionDiffIsMoreThanTen = ((newDataSeconds + 60) - oldDataSeconds) > 10;
+        conditionSame = newDataSeconds === oldDataSeconds;
+        if ((conditionNewIsLower && conditionDiffIsMoreThanTen) || conditionSame) {
+            return false;
+        }
+        console.log("newData",newData);
 
-            return true;
-        });
+        return true;
+    });
 
-        console.log(refreshedUsers);
-        const deleteResult = await db.collection("participants").deleteMany({});
-        if (!deleteResult.deletedCount) return console.log("Nada deletado, nao tinha nada");
-        console.log("participantes foram deletados");
+    // console.log(refreshedUsers);
+    await db.collection("participants").deleteMany({});
+    // if (!deleteResult.deletedCount) return res.send("Nada deletado, nao tinha ninguem");
+    console.log("Participantes foram deletados");
 
+    console.log("permaneceram: ", refreshedUsers);
+    // console.log(refreshedUsers.length === 0);
+    // if (refreshedUsers.length === 0) return console.log("Lista atualizada, ninguem excluido")
+
+    console.log("refreshedUsers.length",refreshedUsers.length)
+    if (refreshedUsers.length !== 0) {
+        console.log("Entrou no if")
         await db.collection("participants").insertMany(refreshedUsers);
-        console.log("participants atualizados");
-
-        const goodByeUsers = allUsers.filter(au => !refreshedUsers.some(ru => ru.name === au.name));
-        // console.log(goodByeMessage);
-
-        const goodByeMessages = goodByeUsers.map(gbu => {
-            return {
-                from: gbu.name,
-                to: "Todos",
-                text: "sai da sala...",
-                type: "status",
-                time: newData
-            };
-        });
-
-        await db.collection("messages").insertMany(goodByeMessages);
-        console.log("Messagens de partidas att");
+        console.log("Participants atualizados, tem gente on");
     }
+    const goodByeUsers = allUsers.filter(au => !refreshedUsers.some(ru => ru.name === au.name));
+    console.log("sairam:",goodByeUsers);
+    if (goodByeUsers.length === 0) return console.log("Participants atualizados, ninguem saiu");
+    
+    const goodByeMessages = goodByeUsers.map(gbu => {
+        return {
+            from: gbu.name,
+            to: "Todos",
+            text: "sai da sala...",
+            type: "status",
+            time: newData
+        };
+    });
 
-    catch (err) {
-        console.log({ message: err.message });
-    }
+    console.log("goodByeMessages:",goodByeMessages);
+    await db.collection("messages").insertMany(goodByeMessages);
+    console.log("Messagens de partidas att");
+    // }    
+
+    // catch (err) {
+    //     // console.log("catch porra!");
+    //     console.log({ message: err.message });
+    // }
 }
 
 server.listen(apiPort, () => console.log(`API running at port ${apiPort}`));
