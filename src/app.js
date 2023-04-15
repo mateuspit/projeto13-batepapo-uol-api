@@ -92,9 +92,9 @@ server.get("/participants", async (req, res) => {
     return res.send(allUsers);
 });
 
-server.post("/messages", (req, res) => {
+server.post("/messages", async (req, res) => {
     const { to, text, type } = req.body;
-    const from = req.headers.from;
+    const from = req.headers.user;
 
     const userEnterDate = new Date(Date.now());
     const hours = userEnterDate.getHours();
@@ -114,12 +114,26 @@ server.post("/messages", (req, res) => {
 
     const { error, value } = validateMessage(sendableObjectMessage);
     if (error) {
-        return res.status(422).send("Erro");
+        return res.status(422).send(error.details.map((detail) => detail.message));
     }
 
-    db.collection("messages").insertOne(sendableObjectMessage)
-        .then(() => res.sendStatus(201))
-        .catch((err) => console.log(err));
+    const participantsOnline = await db.collection("participants").find().toArray();
+    // console.log("participantsOnline: ",participantsOnline);
+    if(!participantsOnline){
+        return res.status(422).send("Não encontramos ninguem online :(")
+    }
+
+    const userExists = participantsOnline.find(po => po.name === from);
+    // console.log("participantsOnline: ",participantsOnline);
+    // console.log("userExists: ",userExists);
+    // console.log("from: ",from);
+    if(!userExists){
+        return res.status(422).send("Usuario não encontrado");
+    }
+
+    // console.log(value)
+    await db.collection("messages").insertOne(value);
+    res.status(201).send("Mensagem enviada");
 });
 
 server.get("/messages", async (req, res) => {
