@@ -206,8 +206,8 @@ server.delete("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     // try {
     const user = req.headers.user;
     const messageId = req.params.ID_DA_MENSAGEM;
-    console.log(user);
-    console.log(messageId);
+    // console.log(user);
+    // console.log(messageId);
 
     const userSendMessageIsTheSame = await db.collection("messages").findOne({ _id: new ObjectId(messageId) });
     // console.log(userSendMessageIsTheSame.from);
@@ -274,8 +274,8 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     // res.send("teste amigo")
 });
 
+setInterval(removeIdleUser, 150000);
 // setInterval(removeIdleUser, 15000);
-setInterval(removeIdleUser, 15000);
 
 async function removeIdleUser() {
     // try {
