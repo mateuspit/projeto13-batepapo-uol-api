@@ -189,7 +189,7 @@ server.post("/status", async (req, res) => {
 
     db.collection("participants").updateOne(
         { _id: userExists._id },
-        { $set: { lastStatus: timeString } },
+        { $set: { lastStatus: Date.now() } },
         (err, result) => {
             if (err) {
                 return res.status(500).send('Erro interno do servidor');
