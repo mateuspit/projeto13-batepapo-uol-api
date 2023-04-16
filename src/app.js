@@ -142,6 +142,7 @@ server.get("/messages", async (req, res) => {
     // console.log(user);
     try {
         const allMessages = await db.collection("messages").find().toArray();
+        if (allMessages.length === 0) return res.send("Não existem mensagens")
         // console.log(allMessages);
         let allowedMessages = allMessages.filter(am => (am.to === user) || (am.from === user) || (am.to === "Todos"));
         // console.log("allowed:   ",allowedMessages);
@@ -170,7 +171,7 @@ server.post("/status", async (req, res) => {
     const allUsers = await db.collection("participants").find().toArray();
     // console.log(allUsers);
     const userExists = allUsers.find(au => au.name === user);
-    // console.log("userExists",userExists);
+    console.log("userExists",userExists);
     if (!userExists) {
         return res.status(404).send("Participante não está na lista");
     }
@@ -199,7 +200,7 @@ server.post("/status", async (req, res) => {
             }
         });
 
-    res.send(userExists);
+    res.status(201).send(userExists);
 });
 
 server.delete("/messages/:ID_DA_MENSAGEM", async (req, res) => {
