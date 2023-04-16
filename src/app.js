@@ -278,93 +278,78 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
 setInterval(removeIdleUser, 15000);
 
 async function removeIdleUser() {
-    // try {
     const allUsers = await db.collection("participants").find().toArray();
-    // console.log(allUsers);
-    // console.log(!allUsers);
-    // console.log(!!allUsers);
     if (allUsers.length === 0) return console.log("Nada deletado, nao tinha ninguem");
-    // if (allUsers) return console.log("Nada deletado, nao tinha ninguem");
-    // console.log(allUsers);
 
-    const newDataTimeStamp = new Date(Date.now());
-    const hours = newDataTimeStamp.getHours();
-    const minutes = newDataTimeStamp.getMinutes();
-    const seconds = newDataTimeStamp.getSeconds();
-    const newData = `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    let newDataTimeStamp = Date.now();
+    // const hours = newDataTimeStamp.getHours();
+    // const minutes = newDataTimeStamp.getMinutes();
+    // const seconds = newDataTimeStamp.getSeconds();
+    // const newData = `${hours.toString().padStart(2, "0")}:${minutes
+    //     .toString()
+    //     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
     const refreshedUsers = allUsers.filter((au) => {
-        const oldDataSeconds = Number(au.lastStatus.split(":")[2]);
+        // const oldDataSeconds = Number(au.lastStatus.split(":")[2]);
 
-        // const newDataTimeStamp = new Date(Date.now());
-        // const hours = newDataTimeStamp.getHours();
-        // const minutes = newDataTimeStamp.getMinutes();
-        // const seconds = newDataTimeStamp.getSeconds();
-        // const newData = `${hours.toString().padStart(2, "0")}:${minutes
-        //     .toString()
-        //     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-
-        const newDataSeconds = Number(newData.split(":")[2])
+        // const newDataSeconds = Number(newData.split(":")[2])
 
 
-        let conditionNewIsHigher = newDataSeconds > oldDataSeconds;
-        let conditionDiffIsMoreThanTen = (newDataSeconds - oldDataSeconds) > 10;
-        let conditionSame = newDataSeconds === oldDataSeconds;
-        if ((conditionNewIsHigher && conditionDiffIsMoreThanTen) || conditionSame) {
+        // let conditionNewIsHigher = newDataSeconds > oldDataSeconds;
+        // let conditionDiffIsMoreThanTen = (newDataSeconds - oldDataSeconds) > 10;
+        // let conditionSame = newDataSeconds === oldDataSeconds;
+        const timeDiff = newDataTimeStamp - au.lastStatus;
+        if (timeDiff > 10) {
             return false;
         }
 
-        let conditionNewIsLower = newDataSeconds < oldDataSeconds;
-        conditionDiffIsMoreThanTen = ((newDataSeconds + 60) - oldDataSeconds) > 10;
-        conditionSame = newDataSeconds === oldDataSeconds;
-        if ((conditionNewIsLower && conditionDiffIsMoreThanTen) || conditionSame) {
-            return false;
-        }
-        console.log("newData",newData);
+        // let conditionNewIsLower = newDataSeconds < oldDataSeconds;
+        // conditionDiffIsMoreThanTen = ((newDataSeconds + 60) - oldDataSeconds) > 10;
+        // conditionSame = newDataSeconds === oldDataSeconds;
+        // if ((conditionNewIsLower && conditionDiffIsMoreThanTen) || conditionSame) {
+        //     return false;
+        // }
 
         return true;
     });
 
-    // console.log(refreshedUsers);
     await db.collection("participants").deleteMany({});
-    // if (!deleteResult.deletedCount) return res.send("Nada deletado, nao tinha ninguem");
     console.log("Participantes foram deletados");
 
     console.log("permaneceram: ", refreshedUsers);
-    // console.log(refreshedUsers.length === 0);
-    // if (refreshedUsers.length === 0) return console.log("Lista atualizada, ninguem excluido")
 
-    console.log("refreshedUsers.length",refreshedUsers.length)
+    console.log("refreshedUsers.length", refreshedUsers.length)
     if (refreshedUsers.length !== 0) {
         console.log("Entrou no if")
         await db.collection("participants").insertMany(refreshedUsers);
         console.log("Participants atualizados, tem gente on");
     }
     const goodByeUsers = allUsers.filter(au => !refreshedUsers.some(ru => ru.name === au.name));
-    console.log("sairam:",goodByeUsers);
+    console.log("sairam:", goodByeUsers);
     if (goodByeUsers.length === 0) return console.log("Participants atualizados, ninguem saiu");
+
+
     
+    const newDataTime = new Date(Date.now());
+    const hours = newDataTime.getHours();
+    const minutes = newDataTime.getMinutes();
+    const seconds = newDataTime.getSeconds();
+    const timeString = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     const goodByeMessages = goodByeUsers.map(gbu => {
         return {
             from: gbu.name,
             to: "Todos",
             text: "sai da sala...",
             type: "status",
-            time: newData
+            time: timeString
         };
     });
 
-    console.log("goodByeMessages:",goodByeMessages);
+    console.log("goodByeMessages:", goodByeMessages);
     await db.collection("messages").insertMany(goodByeMessages);
     console.log("Messagens de partidas att");
-    // }    
-
-    // catch (err) {
-    //     // console.log("catch porra!");
-    //     console.log({ message: err.message });
-    // }
 }
 
 server.listen(apiPort, () => console.log(`API running at port ${apiPort}`));
