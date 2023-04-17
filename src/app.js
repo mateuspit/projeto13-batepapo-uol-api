@@ -301,7 +301,7 @@ async function removeIdleUser() {
         // let conditionDiffIsMoreThanTen = (newDataSeconds - oldDataSeconds) > 10;
         // let conditionSame = newDataSeconds === oldDataSeconds;
         const timeDiff = newDataTimeStamp - au.lastStatus;
-        if (timeDiff > 10) {
+        if (timeDiff > 10000) {
             return false;
         }
 
