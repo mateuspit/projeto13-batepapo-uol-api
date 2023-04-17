@@ -7,6 +7,7 @@ import apiPort from "../constants/apiPort.js";
 import Joi from "joi"
 import { validateUser } from "./../schemas/userSchema.js";
 import { validateMessage } from "../schemas/messageSchema.js";
+import { stripHtml } from "string-strip-html";
 
 const server = express();
 server.use(cors());
@@ -40,8 +41,14 @@ mongoClient.connect().then(() => {
 }).catch((err) => console.log(err.message));
 
 server.post("/participants", async (req, res) => {
+    const username = req.body.name;
+    const usernameWithoutBlanckSpaces = username.trim();
+    const usernameSanatized = {name: stripHtml(usernameWithoutBlanckSpaces).result}
+    // console.log(usernameWithoutBlanckSpaces);
+    // console.log(req.body);
+    // console.log(usernameSanatized);
     try {
-        const { error, value } = validateUser(req.body);
+        const { error, value } = validateUser(usernameSanatized);
 
         if (error) {
             return res.status(422).send("Erro");
@@ -175,7 +182,7 @@ server.post("/status", async (req, res) => {
     const allUsers = await db.collection("participants").find().toArray();
     // console.log(allUsers);
     const userExists = allUsers.find(au => au.name === user);
-    console.log("userExists",userExists);
+    console.log("userExists", userExists);
     if (!userExists) {
         return res.status(404).send("Participante não está na lista");
     }
@@ -334,7 +341,7 @@ async function removeIdleUser() {
     if (goodByeUsers.length === 0) return console.log("Participants atualizados, ninguem saiu");
 
 
-    
+
     const newDataTime = new Date(Date.now());
     const hours = newDataTime.getHours();
     const minutes = newDataTime.getMinutes();
