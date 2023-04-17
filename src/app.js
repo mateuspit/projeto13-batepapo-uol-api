@@ -30,9 +30,9 @@ server.post("/participants", async (req, res) => {
     const usernameSanatized = { name: stripHtml(usernameWithoutBlanckSpaces).result };
     try {
 
-
+        // console.log(usernameSanatized);
         const allUsers = await db.collection("participants").find().toArray();
-        const userExists = allUsers.find((au) => au.name === value.name);
+        const userExists = allUsers.find((au) => au.name === usernameSanatized.name);
 
         if (userExists) return res.status(409).send("Erro digite outro nome");
 
