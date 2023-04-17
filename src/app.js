@@ -14,6 +14,7 @@ dotenv.config();
 
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 const db = mongoClient.db();
+const catchError = "Erro interno do servidor";
 
 mongoClient.connect().then(() => {
     console.log("MongoDB running")
@@ -66,7 +67,7 @@ server.post("/participants", async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).send("Erro interno do servidor");
+        res.status(500).send(catchError);
     }
 });
 
@@ -143,7 +144,7 @@ server.get("/messages", async (req, res) => {
     }
     catch (erro) {
         console.error(erro);
-        res.status(500).send("Erro interno do servidor");
+        res.status(500).send(catchError);
     }
 });
 
@@ -176,7 +177,7 @@ server.post("/status", async (req, res) => {
         { $set: { lastStatus: Date.now() } },
         (err, result) => {
             if (err) {
-                return res.status(500).send('Erro interno do servidor');
+                return res.status(500).send(catchError);
             }
             else {
                 res.sendStatus(200);
@@ -264,7 +265,7 @@ async function removeIdleUser() {
     const allUsers = await db.collection("participants").find().toArray();
     if (allUsers.length === 0) return console.log("Nada deletado, nao tinha ninguem");
 
-    let newDataTimeStamp = Date.now();
+    const newDataTimeStamp = Date.now();
 
     const refreshedUsers = allUsers.filter((au) => {
         const timeDiff = newDataTimeStamp - au.lastStatus;
