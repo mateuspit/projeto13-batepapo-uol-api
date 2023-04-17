@@ -204,7 +204,7 @@ server.post("/status", async (req, res) => {
             }
         });
 
-    res.status(201).send(userExists);
+    res.status(200).send(userExists);
 });
 
 server.delete("/messages/:ID_DA_MENSAGEM", async (req, res) => {
