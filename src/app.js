@@ -17,7 +17,7 @@ const db = mongoClient.db();
 const catchError = "Erro interno do servidor";
 
 mongoClient.connect().then(() => {
-    console.log("MongoDB running")
+    console.log("MongoDB running");
 }).catch((err) => console.log(err.message));
 
 server.post("/participants", async (req, res) => {
@@ -207,7 +207,7 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     if (error) return res.status(422).send("Erro no body");
 
     const messageExist = await db.collection("messages").findOne({ _id: new ObjectId(messageId) });
-    if (!messageExist) return res.sendStatus(404)
+    if (!messageExist) return res.sendStatus(404);
     if (messageExist.from === from) {
         await db.collection("messages")
             .updateOne({ _id: new ObjectId(messageId) }, { $set: value });
@@ -240,7 +240,7 @@ async function removeIdleUser() {
 
     console.log("permaneceram: ", refreshedUsers);
 
-    console.log("refreshedUsers.length", refreshedUsers.length)
+    console.log("refreshedUsers.length", refreshedUsers.length);
     if (refreshedUsers.length !== 0) {
         console.log("Entrou no if");
         await db.collection("participants").insertMany(refreshedUsers);
