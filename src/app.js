@@ -54,7 +54,8 @@ server.post("/participants", async (req, res) => {
             return res.status(409).send("Erro digite outro nome");
         }
 
-        const userEnterDate = new Date(Date.now());
+        const timeStampUserEnterDate = Date.now();
+        const userEnterDate = new Date(timeStampUserEnterDate);
 
         const hours = userEnterDate.getHours();
         const minutes = userEnterDate.getMinutes();
@@ -66,8 +67,10 @@ server.post("/participants", async (req, res) => {
 
         db.collection("participants").insertOne({
             name: value.name,
-            lastStatus: Date.now(),
+            lastStatus: timeStampUserEnterDate,
         });
+        // console.log(typeof timeString)
+        // console.log(timeString)
 
         db.collection("messages").insertOne({
             from: value.name,
@@ -142,7 +145,7 @@ server.get("/messages", async (req, res) => {
     // console.log(user);
     try {
         const allMessages = await db.collection("messages").find().toArray();
-        if (allMessages.length === 0) return res.send("Não existem mensagens")
+        if (allMessages.length === 0) return res.send(["Não existem mensagens"])
         // console.log(allMessages);
         let allowedMessages = allMessages.filter(am => (am.to === user) || (am.from === user) || (am.to === "Todos"));
         // console.log("allowed:   ",allowedMessages);  
