@@ -145,7 +145,7 @@ server.get("/messages", async (req, res) => {
         if (allMessages.length === 0) return res.send("Não existem mensagens")
         // console.log(allMessages);
         let allowedMessages = allMessages.filter(am => (am.to === user) || (am.from === user) || (am.to === "Todos"));
-        // console.log("allowed:   ",allowedMessages);
+        // console.log("allowed:   ",allowedMessages);  
         if (!(limit > 0) && !(typeof limit === "number") && (limit !== undefined)) {
             // return res.status(422).send("limite invalido");
             return res.sendStatus(422);
