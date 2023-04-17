@@ -24,7 +24,7 @@ server.post("/participants", async (req, res) => {
     const username = req.body;
     if (!username.name) return res.status(422).send("Erro");
     const usernameWithoutBlanckSpaces = username.name.trim();
-    const usernameSanatized = { name: stripHtml(usernameWithoutBlanckSpaces).result }
+    const usernameSanatized = { name: stripHtml(usernameWithoutBlanckSpaces).result };
     try {
         const { error, value } = validateUser(usernameSanatized);
 
@@ -117,10 +117,10 @@ server.get("/messages", async (req, res) => {
     const limit = req.query.limit;
     try {
         const allMessages = await db.collection("messages").find().toArray();
-        if (allMessages.length === 0) return res.send(["Não existem mensagens"])
+        if (allMessages.length === 0) return res.send(["Não existem mensagens"]);
         let allowedMessages = allMessages.filter(am => (am.to === user) || (am.from === user) || (am.to === "Todos"));
 
-        if (!(limit > 0) && !(typeof limit === "number") && (limit !== undefined)) {
+        if ((limit <= 0) && (typeof limit !== "number") && (limit !== undefined)) {
             return res.sendStatus(422);
         }
         else if (limit) {
@@ -173,7 +173,7 @@ server.delete("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     if (userSendMessageIsTheSame.from === user) {
         const result = await db.collection("messages").deleteOne({ _id: new ObjectId(messageId) });
         if (!result.deletedCount) return res.sendStatus(404);
-        res.status(200).send("Menssagem deletado com sucesso")
+        res.status(200).send("Menssagem deletado com sucesso");
     }
     else {
         res.sendStatus(401);
@@ -209,9 +209,9 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     const messageExist = await db.collection("messages").findOne({ _id: new ObjectId(messageId) });
     if (!messageExist) return res.sendStatus(404)
     if (messageExist.from === from) {
-        const result = await db.collection("messages")
+        await db.collection("messages")
             .updateOne({ _id: new ObjectId(messageId) }, { $set: value });
-        res.status(200).send("Menssagem update com sucesso")
+        res.status(200).send("Mensagem update com sucesso");
     }
     else {
         return res.status(401).send("User sem permissao");
@@ -242,7 +242,7 @@ async function removeIdleUser() {
 
     console.log("refreshedUsers.length", refreshedUsers.length)
     if (refreshedUsers.length !== 0) {
-        console.log("Entrou no if")
+        console.log("Entrou no if");
         await db.collection("participants").insertMany(refreshedUsers);
         console.log("Participants atualizados, tem gente on");
     }
