@@ -3,8 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { MongoClient, ObjectId } from "mongodb";
 import apiPort from "../constants/apiPort.js";
-// const { validateUser } = require("./../schemas/userSchema.js");
-import Joi from "joi"
 import { validateUser } from "./../schemas/userSchema.js";
 import { validateMessage } from "../schemas/messageSchema.js";
 import { stripHtml } from "string-strip-html";
@@ -14,39 +12,17 @@ server.use(cors());
 server.use(express.json());
 dotenv.config();
 
-// const mongoClient = new MongoClient("mongodb://localhost:27017/nomeDoBanco");
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 const db = mongoClient.db();
-// participante:
-// {
-//     name: 'João',
-//     lastStatus: 12313123
-// }
-
-//Mensagem:
-// {
-//     from: 'João',
-//     to: 'Todos', 
-//     text: 'oi galera', 
-//     type: 'message', 
-//     time: '20:04:37'
-// }
 
 mongoClient.connect().then(() => {
     console.log("MongoDB running")
-    // db.collection("contatos").find().toArray()
-    //     .then(contatos => {
-    //         console.log(contatos)
-    //     });
 }).catch((err) => console.log(err.message));
 
 server.post("/participants", async (req, res) => {
     const username = req.body.name;
     const usernameWithoutBlanckSpaces = username.trim();
     const usernameSanatized = { name: stripHtml(usernameWithoutBlanckSpaces).result }
-    // console.log(usernameWithoutBlanckSpaces);
-    // console.log(req.body);
-    // console.log(usernameSanatized);
     try {
         const { error, value } = validateUser(usernameSanatized);
 
@@ -76,8 +52,6 @@ server.post("/participants", async (req, res) => {
             name: value.name,
             lastStatus: timeStampUserEnterDate,
         });
-        // console.log(typeof timeString)
-        // console.log(timeString)
 
         db.collection("messages").insertOne({
             from: value.name,
@@ -121,7 +95,6 @@ server.post("/messages", async (req, res) => {
         from,
         time: timeString
     };
-    //from: stripHtml(from).result
     const sendableObjectMessageSanitaze = {
         to: stripHtml(to).result.trim(),
         text: stripHtml(text).result.trim(),
@@ -129,7 +102,6 @@ server.post("/messages", async (req, res) => {
         from: stripHtml(from).result.trim(),
         time: timeString
     };
-    // console.log(sendableObjectMessageSanitaze);
 
 
 
@@ -139,21 +111,16 @@ server.post("/messages", async (req, res) => {
     }
 
     const participantsOnline = await db.collection("participants").find().toArray();
-    // console.log("participantsOnline: ",participantsOnline);
     console.log(participantsOnline);
     if (participantsOnline.length === 0) {
         return res.status(422).send("Não encontramos ninguem online :(")
     }
 
     const userExists = participantsOnline.find(po => po.name === stripHtml(from).result);
-    // console.log("participantsOnline: ",participantsOnline);
-    // console.log("userExists: ",userExists);
-    // console.log("from: ",from);
     if (!userExists) {
         return res.status(422).send("Usuario não encontrado");
     }
 
-    // console.log(value)
     await db.collection("messages").insertOne(value);
     res.status(201).send("Mensagem enviada");
 });
@@ -161,15 +128,12 @@ server.post("/messages", async (req, res) => {
 server.get("/messages", async (req, res) => {
     const user = req.headers.user;
     const limit = req.query.limit;
-    // console.log(user);
     try {
         const allMessages = await db.collection("messages").find().toArray();
         if (allMessages.length === 0) return res.send(["Não existem mensagens"])
-        // console.log(allMessages);
         let allowedMessages = allMessages.filter(am => (am.to === user) || (am.from === user) || (am.to === "Todos"));
-        // console.log("allowed:   ",allowedMessages);  
+        
         if (!(limit > 0) && !(typeof limit === "number") && (limit !== undefined)) {
-            // return res.status(422).send("limite invalido");
             return res.sendStatus(422);
         }
         else if (limit) {
@@ -185,14 +149,12 @@ server.get("/messages", async (req, res) => {
 
 server.post("/status", async (req, res) => {
     const user = req.headers.user;
-    // console.log(user)
 
     if (!user) {
         return res.status(404).send("Header não foi passado");
     }
 
     const allUsers = await db.collection("participants").find().toArray();
-    // console.log(allUsers);
     const userExists = allUsers.find(au => au.name === user);
     console.log("userExists", userExists);
     if (!userExists) {
@@ -208,8 +170,6 @@ server.post("/status", async (req, res) => {
     const timeString = `${hours.toString().padStart(2, "0")}:${minutes
         .toString()
         .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-
-    // console.log(timeString);
 
     db.collection("participants").updateOne(
         { _id: userExists._id },
@@ -298,7 +258,6 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     // res.send("teste amigo")
 });
 
-// setInterval(removeIdleUser, 1500000);
 setInterval(removeIdleUser, 15000);
 
 async function removeIdleUser() {
@@ -306,33 +265,12 @@ async function removeIdleUser() {
     if (allUsers.length === 0) return console.log("Nada deletado, nao tinha ninguem");
 
     let newDataTimeStamp = Date.now();
-    // const hours = newDataTimeStamp.getHours();
-    // const minutes = newDataTimeStamp.getMinutes();
-    // const seconds = newDataTimeStamp.getSeconds();
-    // const newData = `${hours.toString().padStart(2, "0")}:${minutes
-    //     .toString()
-    //     .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
     const refreshedUsers = allUsers.filter((au) => {
-        // const oldDataSeconds = Number(au.lastStatus.split(":")[2]);
-
-        // const newDataSeconds = Number(newData.split(":")[2])
-
-
-        // let conditionNewIsHigher = newDataSeconds > oldDataSeconds;
-        // let conditionDiffIsMoreThanTen = (newDataSeconds - oldDataSeconds) > 10;
-        // let conditionSame = newDataSeconds === oldDataSeconds;
         const timeDiff = newDataTimeStamp - au.lastStatus;
         if (timeDiff > 10000) {
             return false;
         }
-
-        // let conditionNewIsLower = newDataSeconds < oldDataSeconds;
-        // conditionDiffIsMoreThanTen = ((newDataSeconds + 60) - oldDataSeconds) > 10;
-        // conditionSame = newDataSeconds === oldDataSeconds;
-        // if ((conditionNewIsLower && conditionDiffIsMoreThanTen) || conditionSame) {
-        //     return false;
-        // }
 
         return true;
     });
