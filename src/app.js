@@ -164,14 +164,11 @@ server.post("/status", async (req, res) => {
 });
 
 server.delete("/messages/:ID_DA_MENSAGEM", async (req, res) => {
-    // try {
     const user = req.headers.user;
     const messageId = req.params.ID_DA_MENSAGEM;
-    // console.log(user);
-    // console.log(messageId);
 
     const userSendMessageIsTheSame = await db.collection("messages").findOne({ _id: new ObjectId(messageId) });
-    // console.log(userSendMessageIsTheSame.from);
+
     if (!userSendMessageIsTheSame) return res.sendStatus(404);
     if (userSendMessageIsTheSame.from === user) {
         const result = await db.collection("messages").deleteOne({ _id: new ObjectId(messageId) });
@@ -181,10 +178,6 @@ server.delete("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     else {
         res.sendStatus(401);
     }
-    // }
-    // catch (err) {
-    //     res.status(500).send("catch parceiro");
-    // }
 });
 
 server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
