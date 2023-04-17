@@ -22,22 +22,18 @@ mongoClient.connect().then(() => {
 
 server.post("/participants", async (req, res) => {
     const username = req.body;
-    if(!username.name) return res.status(422).send("Erro");
+    if (!username.name) return res.status(422).send("Erro");
     const usernameWithoutBlanckSpaces = username.name.trim();
     const usernameSanatized = { name: stripHtml(usernameWithoutBlanckSpaces).result }
     try {
         const { error, value } = validateUser(usernameSanatized);
 
-        if (error) {
-            return res.status(422).send("Erro");
-        }
+        if (error) return res.status(422).send("Erro");
 
         const allUsers = await db.collection("participants").find().toArray();
         const userExists = allUsers.find((au) => au.name === value.name);
 
-        if (userExists) {
-            return res.status(409).send("Erro digite outro nome");
-        }
+        if (userExists) return res.status(409).send("Erro digite outro nome");
 
         const timeStampUserEnterDate = Date.now();
         const userEnterDate = new Date(timeStampUserEnterDate);
@@ -82,6 +78,8 @@ server.post("/messages", async (req, res) => {
     const { to, text, type } = req.body;
     const from = req.headers.user;
 
+    if (!to || !text || !type || !from) return res.status(422).send("Erro, body está errado");
+
     const userEnterDate = new Date(Date.now());
     const hours = userEnterDate.getHours();
     const minutes = userEnterDate.getMinutes();
@@ -90,13 +88,6 @@ server.post("/messages", async (req, res) => {
         .toString()
         .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-    const sendableObjectMessageWithoutSanitaze = {
-        to,
-        text,
-        type,
-        from,
-        time: timeString
-    };
     const sendableObjectMessageSanitaze = {
         to: stripHtml(to).result.trim(),
         text: stripHtml(text).result.trim(),
@@ -108,20 +99,14 @@ server.post("/messages", async (req, res) => {
 
 
     const { error, value } = validateMessage(sendableObjectMessageSanitaze);
-    if (error) {
-        return res.status(422).send(error.details.map((detail) => detail.message));
-    }
+    if (error) return res.status(422).send(error.details.map((detail) => detail.message));
 
     const participantsOnline = await db.collection("participants").find().toArray();
     console.log(participantsOnline);
-    if (participantsOnline.length === 0) {
-        return res.status(422).send("Não encontramos ninguem online :(")
-    }
+    if (participantsOnline.length === 0) return res.status(422).send("Não encontramos ninguem online :(");
 
     const userExists = participantsOnline.find(po => po.name === stripHtml(from).result);
-    if (!userExists) {
-        return res.status(422).send("Usuario não encontrado");
-    }
+    if (!userExists) return res.status(422).send("Usuario não encontrado");
 
     await db.collection("messages").insertOne(value);
     res.status(201).send("Mensagem enviada");
@@ -134,7 +119,7 @@ server.get("/messages", async (req, res) => {
         const allMessages = await db.collection("messages").find().toArray();
         if (allMessages.length === 0) return res.send(["Não existem mensagens"])
         let allowedMessages = allMessages.filter(am => (am.to === user) || (am.from === user) || (am.to === "Todos"));
-        
+
         if (!(limit > 0) && !(typeof limit === "number") && (limit !== undefined)) {
             return res.sendStatus(422);
         }
@@ -163,16 +148,6 @@ server.post("/status", async (req, res) => {
         return res.status(404).send("Participante não está na lista");
     }
 
-    const userEnterDate = new Date(Date.now());
-
-    const hours = userEnterDate.getHours();
-    const minutes = userEnterDate.getMinutes();
-    const seconds = userEnterDate.getSeconds();
-
-    const timeString = `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-
     db.collection("participants").updateOne(
         { _id: userExists._id },
         { $set: { lastStatus: Date.now() } },
@@ -181,7 +156,7 @@ server.post("/status", async (req, res) => {
                 return res.status(500).send(catchError);
             }
             else {
-                res.sendStatus(200);
+                res.status(200).send(result);
             }
         });
 
@@ -217,6 +192,8 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     const from = req.headers.user;
     const messageId = req.params.ID_DA_MENSAGEM;
 
+    if (!to || !text || !type) return res.status(422).send("Erro, body está errado");
+
     const userEnterDate = new Date(Date.now());
     const hours = userEnterDate.getHours();
     const minutes = userEnterDate.getMinutes();
@@ -237,27 +214,15 @@ server.put("/messages/:ID_DA_MENSAGEM", async (req, res) => {
     if (error) return res.status(422).send("Erro no body");
 
     const messageExist = await db.collection("messages").findOne({ _id: new ObjectId(messageId) });
-    // console.log(messageExist);
     if (!messageExist) return res.sendStatus(404)
-    // console.log(messageExist);
-    // console.log(messageExist.from);
-    // console.log(from);
     if (messageExist.from === from) {
         const result = await db.collection("messages")
             .updateOne({ _id: new ObjectId(messageId) }, { $set: value });
-        // console.log(result.matchedCount);
-        // console.log(!!result.matchedCount);
-        // if (!result.matchedCount) return res.status(404).send("nada mudou");
         res.status(200).send("Menssagem update com sucesso")
     }
     else {
         return res.status(401).send("User sem permissao");
     }
-
-
-    // console.log(value);
-
-    // res.send("teste amigo")
 });
 
 setInterval(removeIdleUser, 15000);
