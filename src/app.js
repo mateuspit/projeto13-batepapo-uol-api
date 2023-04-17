@@ -21,8 +21,9 @@ mongoClient.connect().then(() => {
 }).catch((err) => console.log(err.message));
 
 server.post("/participants", async (req, res) => {
-    const username = req.body.name;
-    const usernameWithoutBlanckSpaces = username.trim();
+    const username = req.body;
+    if(!username.name) return res.status(422).send("Erro");
+    const usernameWithoutBlanckSpaces = username.name.trim();
     const usernameSanatized = { name: stripHtml(usernameWithoutBlanckSpaces).result }
     try {
         const { error, value } = validateUser(usernameSanatized);
