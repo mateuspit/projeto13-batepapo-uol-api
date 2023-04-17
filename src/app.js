@@ -22,13 +22,14 @@ mongoClient.connect().then(() => {
 
 server.post("/participants", async (req, res) => {
     const username = req.body;
-    if (!username.name) return res.status(422).send("Erro");
-    const usernameWithoutBlanckSpaces = username.name.trim();
+    const { error, value } = validateUser(username);
+
+    if (error) return res.status(422).send("Erro");
+
+    const usernameWithoutBlanckSpaces = value.name.trim();
     const usernameSanatized = { name: stripHtml(usernameWithoutBlanckSpaces).result };
     try {
-        const { error, value } = validateUser(usernameSanatized);
 
-        if (error) return res.status(422).send("Erro");
 
         const allUsers = await db.collection("participants").find().toArray();
         const userExists = allUsers.find((au) => au.name === value.name);
@@ -47,12 +48,12 @@ server.post("/participants", async (req, res) => {
             .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
         db.collection("participants").insertOne({
-            name: value.name,
+            name: usernameSanatized.name,
             lastStatus: timeStampUserEnterDate,
         });
 
         db.collection("messages").insertOne({
-            from: value.name,
+            from: usernameSanatized.name,
             to: "Todos",
             text: "entra na sala...",
             type: "status",
@@ -115,12 +116,13 @@ server.post("/messages", async (req, res) => {
 server.get("/messages", async (req, res) => {
     const user = req.headers.user;
     const limit = req.query.limit;
+
     try {
         const allMessages = await db.collection("messages").find().toArray();
         if (allMessages.length === 0) return res.send(["Não existem mensagens"]);
         let allowedMessages = allMessages.filter(am => (am.to === user) || (am.from === user) || (am.to === "Todos"));
 
-        if ((limit <= 0) && (typeof limit !== "number") && (limit !== undefined)) {
+        if ((limit !== undefined && (isNaN(Number(limit))) || Number(limit) <= 0)) {
             return res.sendStatus(422);
         }
         else if (limit) {
