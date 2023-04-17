@@ -43,7 +43,7 @@ mongoClient.connect().then(() => {
 server.post("/participants", async (req, res) => {
     const username = req.body.name;
     const usernameWithoutBlanckSpaces = username.trim();
-    const usernameSanatized = {name: stripHtml(usernameWithoutBlanckSpaces).result}
+    const usernameSanatized = { name: stripHtml(usernameWithoutBlanckSpaces).result }
     // console.log(usernameWithoutBlanckSpaces);
     // console.log(req.body);
     // console.log(usernameSanatized);
@@ -114,26 +114,38 @@ server.post("/messages", async (req, res) => {
         .toString()
         .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-    const sendableObjectMessage = {
+    const sendableObjectMessageWithoutSanitaze = {
         to,
         text,
         type,
         from,
         time: timeString
     };
+    //from: stripHtml(from).result
+    const sendableObjectMessageSanitaze = {
+        to: stripHtml(to).result.trim(),
+        text: stripHtml(text).result.trim(),
+        type: stripHtml(type).result.trim(),
+        from: stripHtml(from).result.trim(),
+        time: timeString
+    };
+    // console.log(sendableObjectMessageSanitaze);
 
-    const { error, value } = validateMessage(sendableObjectMessage);
+
+
+    const { error, value } = validateMessage(sendableObjectMessageSanitaze);
     if (error) {
         return res.status(422).send(error.details.map((detail) => detail.message));
     }
 
     const participantsOnline = await db.collection("participants").find().toArray();
     // console.log("participantsOnline: ",participantsOnline);
-    if (!participantsOnline) {
+    console.log(participantsOnline);
+    if (participantsOnline.length === 0) {
         return res.status(422).send("Não encontramos ninguem online :(")
     }
 
-    const userExists = participantsOnline.find(po => po.name === from);
+    const userExists = participantsOnline.find(po => po.name === stripHtml(from).result);
     // console.log("participantsOnline: ",participantsOnline);
     // console.log("userExists: ",userExists);
     // console.log("from: ",from);
